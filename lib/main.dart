@@ -1,99 +1,285 @@
 import 'package:flutter/material.dart';
-import 'package:predictiva/orders.dart';
-import 'package:predictiva/portfolio.dart'; // Import the Portfolio component
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFF0D0D0F),
-        textTheme: const TextTheme(
-          bodyText2: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 16,
-            fontWeight: FontWeight.w400,
-            height: 1.3,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      home: const MyHomePage(),
+      theme: ThemeData.dark(),
+      home: AccountOverview(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class AccountOverview extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Account Overview'),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            // Mobile Layout
+            return MobileLayout();
+          } else {
+            // Tablet/Desktop Layout
+            return TabletLayout();
+          }
+        },
+      ),
+    );
+  }
+}
+
+class MobileLayout extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Hi Robin,',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Here is an overview of your account activities.',
+            style: TextStyle(
+              fontSize: 16,
+            ),
+          ),
+          SizedBox(height: 16),
+          AccountInfoCard(),
+          SizedBox(height: 16),
+          SubscriptionInfo(),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilterButton(),
+            ],
+          ),
+          SizedBox(height: 16),
+          Expanded(child: OpenTradesList()),
+        ],
+      ),
+    );
+  }
+}
+
+class TabletLayout extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hi Robin,',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Here is an overview of your account activities.',
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 16),
+                AccountInfoCard(),
+                SizedBox(height: 16),
+                SubscriptionInfo(),
+                SizedBox(height: 16),
+              ],
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FilterButton(),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Expanded(child: OpenTradesList()),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AccountInfoCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.black54,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AccountInfoRow(label: 'Balance', value: '\$616.81'),
+            Divider(color: Colors.grey),
+            AccountInfoRow(
+              label: 'Profits',
+              value: '\$86.03',
+              valueStyle: TextStyle(color: Colors.red),
+              additionalWidget: Text(
+                '8%',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+            Divider(color: Colors.grey),
+            AccountInfoRow(label: 'Assets', value: '12'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AccountInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final TextStyle valueStyle;
+  final Widget additionalWidget;
+
+  const AccountInfoRow({
+    Key? key,
+    required this.label,
+    required this.value,
+    this.valueStyle = const TextStyle(),
+    this.additionalWidget = const SizedBox.shrink(),
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    return Scaffold(
-      body: SingleChildScrollView(
-          child: Container(
-        height: 800,
-        child: Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 16)),
+        Row(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MediaQuery.of(context).size.width < 600
-                    ? SizedBox(width: 16)
-                    : SizedBox(width: 110),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Hi Robin,",
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xffFFFFFF),
-                          height: 1.45, // 23.2px / 16px = 1.45
-                        ),
-                      ),
-                      SizedBox(height: 8), // Add space between the texts
-                      Wrap(
-                        children: [
-                          Text(
-                            'Here is an overview of your account activities.',
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFFF4F4F5),
-                              height: 1.45, // 23.2px / 16px = 1.457
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              height: screenWidth < 650 ? 300 : 190,
-              child: Portfolio(), // Add the Portfolio component
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Orders(), // Add the Orders component
-            ),
+            Text(value, style: valueStyle.copyWith(fontSize: 16)),
+            SizedBox(width: 4),
+            additionalWidget,
           ],
         ),
-      )),
+      ],
+    );
+  }
+}
+
+class SubscriptionInfo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.warning, color: Colors.yellow),
+        SizedBox(width: 8),
+        Text(
+          'This subscription expires in a month',
+          style: TextStyle(color: Colors.yellow),
+        ),
+      ],
+    );
+  }
+}
+
+class OpenTradesList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: 5, // You can replace this with the actual number of trades
+      itemBuilder: (context, index) {
+        return OpenTradeCard();
+      },
+    );
+  }
+}
+
+class OpenTradeCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.black54,
+      child: ListTile(
+        leading: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('MINAUSDT', style: TextStyle(color: Colors.white)),
+            Text('Sell', style: TextStyle(color: Colors.red)),
+          ],
+        ),
+        title: Text('1.5636', style: TextStyle(color: Colors.white)),
+        subtitle: Text('19 Dec, 2023', style: TextStyle(color: Colors.grey)),
+      ),
+    );
+  }
+}
+
+class FilterButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        primary: Colors.black, // Background color
+        onPrimary: Colors.white, // Text color
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          side: BorderSide(color: Colors.grey), // Border color
+        ),
+      ),
+      onPressed: () {
+        // Add your filter functionality here
+        showDialog(
+          context: context,
+          builder: (context) => FilterDialog(),
+        );
+      },
+      icon: Icon(Icons.filter_list),
+      label: Text('Filter'),
+    );
+  }
+}
+
+class FilterDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Filter Trades'),
+      content: Text('Filter options go here'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('Close'),
+        ),
+      ],
     );
   }
 }
