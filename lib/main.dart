@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,8 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor:
-            const Color(0xFF0D0D0F), // Set scaffold background color to #0D0D0F
+        scaffoldBackgroundColor: const Color(0xFF0D0D0F),
         textTheme: const TextTheme(
           bodyText2: TextStyle(
             fontFamily: 'Inter',
@@ -39,44 +41,55 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<DataRow> _rows = [
-    DataRow(cells: [
-      DataCell(const Text('AAPL')),
-      DataCell(const Text('\$150.05')),
-      DataCell(const Text('Buy')),
-      DataCell(const Text('Execute')),
-      DataCell(const Text('10')),
-      DataCell(const Text('2024-05-16')),
-    ]),
-    DataRow(cells: [
-      DataCell(const Text('GOOGL')),
-      DataCell(const Text('\$2800.10')),
-      DataCell(TextButton(
-          onPressed: () {},
-          style: TextButton.styleFrom(
-            primary: Color(0xFF3E3F48), // Button background color
-            padding: EdgeInsets.zero, // Remove padding
-          ),
-          child: SvgPicture.asset(
-            'assets/sell.svg',
-          ))),
-      DataCell(const Text('Cancel')),
-      DataCell(const Text('5')),
-      DataCell(const Text('2024-05-15')),
-    ]),
-    DataRow(cells: [
-      DataCell(const Text('AMZN')),
-      DataCell(const Text('\$3500.00')),
-      DataCell(const Text('Buy')),
-      DataCell(const Text('Execute')),
-      DataCell(const Text('8')),
-      DataCell(const Text('2024-05-14')),
-    ]),
-  ];
+  List<DataRow> _rows = [];
 
-  void _filterButtonPressed() {
-    // Implement your filter logic here
-    // For example, you can update the _rows list based on filters
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
+  Future<void> fetchData() async {
+    try {
+      final response = await http.get(Uri.parse(
+          'https://api-cryptiva.azure-api.net/staging/api/v1/orders/open'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> orders = data['data']['orders'];
+        setState(() {
+          _rows = orders.map<DataRow>((order) {
+            DateFormat dateFormat = DateFormat('dd MMM, yyyy');
+            String formattedDate = dateFormat.format(
+                DateTime.fromMillisecondsSinceEpoch(
+                    order['creation_time'] * 1000));
+            return DataRow(cells: [
+              DataCell(Text(order['symbol'])),
+              DataCell(Text('${order['price']}')),
+              DataCell(Text(order['type'])),
+              order['side'] == 'SELL'
+                  ? DataCell(
+                      TextButton(
+                        onPressed: () {},
+                        style: TextButton.styleFrom(
+                          primary: Color(0xFF3E3F48), // Button background color
+                          padding: EdgeInsets.zero, // Remove padding
+                        ),
+                        child: SvgPicture.asset('assets/sell.svg'),
+                      ),
+                    )
+                  : DataCell(Text('BUY')),
+              DataCell(Text(order['quantity'].toString())),
+              DataCell(Text(formattedDate)),
+            ]);
+          }).toList();
+        });
+      } else {
+        throw Exception('Failed to load data');
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
   }
 
   @override
@@ -88,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Container(
         width: 1324,
         height: 647,
-        margin: const EdgeInsets.only(top: 392, left: 52),
+        margin: const EdgeInsets.only(left: 52),
         padding: EdgeInsets.zero,
         decoration: BoxDecoration(
           color: const Color(0xFF161619),
@@ -120,17 +133,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 TextButton(
                   onPressed: _filterButtonPressed,
                   style: TextButton.styleFrom(
-                    primary: Color(0xFF3E3F48), // Button background color
-                    padding: EdgeInsets.zero, // Remove padding
+                    primary: Color(0xFF3E3F48),
+                    padding: EdgeInsets.zero,
                   ),
                   child: ColorFiltered(
                     colorFilter: ColorFilter.mode(
-                      Colors.white, // Color you want to apply
-                      BlendMode.srcIn, // Blend mode
+                      Colors.white,
+                      BlendMode.srcIn,
                     ),
                     child: SvgPicture.asset(
                       'assets/filter.svg',
-                      width: 92, // Adjust size as needed
+                      width: 92,
                       height: 48,
                     ),
                   ),
@@ -142,57 +155,29 @@ class _MyHomePageState extends State<MyHomePage> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Container(
-                  color: const Color(
-                      0xFF161619), // Set background color for DataTable
+                  color: const Color(0xFF161619),
                   child: DataTable(
                     columns: const [
                       DataColumn(
                           label: Text('Symbol',
-                              style: TextStyle(
-                                  color: Colors
-                                      .white))), // Set text color to white
+                              style: TextStyle(color: Colors.white))),
                       DataColumn(
                           label: Text('Price',
-                              style: TextStyle(
-                                  color: Colors
-                                      .white))), // Set text color to white
+                              style: TextStyle(color: Colors.white))),
                       DataColumn(
                           label: Text('Type',
-                              style: TextStyle(
-                                  color: Colors
-                                      .white))), // Set text color to white
+                              style: TextStyle(color: Colors.white))),
                       DataColumn(
                           label: Text('Action',
-                              style: TextStyle(
-                                  color: Colors
-                                      .white))), // Set text color to white
+                              style: TextStyle(color: Colors.white))),
                       DataColumn(
                           label: Text('Quantity',
-                              style: TextStyle(
-                                  color: Colors
-                                      .white))), // Set text color to white
+                              style: TextStyle(color: Colors.white))),
                       DataColumn(
                           label: Text('Date',
-                              style: TextStyle(
-                                  color: Colors
-                                      .white))), // Set text color to white
+                              style: TextStyle(color: Colors.white))),
                     ],
-                    rows: _rows.map((DataRow row) {
-                      return DataRow(
-                        cells: row.cells,
-                        color: MaterialStateProperty.resolveWith<Color?>(
-                          (Set<MaterialState> states) {
-                            if (states.contains(MaterialState.selected)) {
-                              return Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.08);
-                            }
-                            return null; // Use default row color
-                          },
-                        ),
-                      );
-                    }).toList(),
+                    rows: _rows,
                   ),
                 ),
               ),
@@ -201,5 +186,10 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  void _filterButtonPressed() {
+    // Implement your filter logic here
+    // For example, you can update the _rows list based on filters
   }
 }
