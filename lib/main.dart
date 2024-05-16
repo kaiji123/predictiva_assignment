@@ -41,12 +41,21 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  late PageController _pageController;
   List<DataRow> _rows = [];
+  final int _rowsPerPage = 5;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     fetchData();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchData() async {
@@ -120,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Open Trades',
@@ -152,39 +161,82 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Container(
-                  color: const Color(0xFF161619),
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(
-                          label: Text('Symbol',
-                              style: TextStyle(color: Colors.white))),
-                      DataColumn(
-                          label: Text('Price',
-                              style: TextStyle(color: Colors.white))),
-                      DataColumn(
-                          label: Text('Type',
-                              style: TextStyle(color: Colors.white))),
-                      DataColumn(
-                          label: Text('Action',
-                              style: TextStyle(color: Colors.white))),
-                      DataColumn(
-                          label: Text('Quantity',
-                              style: TextStyle(color: Colors.white))),
-                      DataColumn(
-                          label: Text('Date',
-                              style: TextStyle(color: Colors.white))),
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: (_rows.length / _rowsPerPage).ceil(),
+                itemBuilder: (context, index) {
+                  return Column(
+                    children: [
+                      SingleChildScrollView(
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(
+                                label: Text('Symbol',
+                                    style: TextStyle(color: Colors.white))),
+                            DataColumn(
+                                label: Text('Price',
+                                    style: TextStyle(color: Colors.white))),
+                            DataColumn(
+                                label: Text('Type',
+                                    style: TextStyle(color: Colors.white))),
+                            DataColumn(
+                                label: Text('Action',
+                                    style: TextStyle(color: Colors.white))),
+                            DataColumn(
+                                label: Text('Quantity',
+                                    style: TextStyle(color: Colors.white))),
+                            DataColumn(
+                                label: Text('Date',
+                                    style: TextStyle(color: Colors.white))),
+                          ],
+                          rows: _getDataRows(index),
+                        ),
+                      ),
+                      _buildPaginationButtons(index),
                     ],
-                    rows: _rows,
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  List<DataRow> _getDataRows(int pageIndex) {
+    int start = pageIndex * _rowsPerPage;
+    int end = (pageIndex + 1) * _rowsPerPage;
+    if (end > _rows.length) {
+      end = _rows.length;
+    }
+    return _rows.sublist(start, end);
+  }
+
+  Widget _buildPaginationButtons(index) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            if (_pageController.page! > 0) {
+              _pageController.previousPage(
+                  duration: Duration(milliseconds: 500), curve: Curves.ease);
+            }
+          },
+        ),
+        Text('${index + 1}'),
+        IconButton(
+          icon: Icon(Icons.arrow_forward),
+          onPressed: () {
+            if (_pageController.page! < _rows.length / _rowsPerPage) {
+              _pageController.nextPage(
+                  duration: Duration(milliseconds: 500), curve: Curves.ease);
+            }
+          },
+        ),
+      ],
     );
   }
 
